@@ -1,4 +1,4 @@
-# Plataforma SAST & DevSecOps — Checkpoint 1
+# Plataforma SAST & DevSecOps 
 
 Protótipo didático de análise estática para **Python**, com FastAPI, AST e Docker Compose. O scanner não executa o código analisado.
 
