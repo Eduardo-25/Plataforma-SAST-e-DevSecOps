@@ -12,6 +12,8 @@ Guilherme Ulacco (RM: 558418)
 
 Matheus Hostim (RM: 556517)
 
+Estevam Melo (RM: 555124)
+
 ## Requisitos
 
 - Docker Desktop instalado e em execução (inclui Docker Compose).
