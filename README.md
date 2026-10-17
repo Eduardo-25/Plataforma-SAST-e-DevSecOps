@@ -21,7 +21,7 @@ Estevam Melo (RM: 555124)
 ## Estrutura
 
 ```text
-cp1_sast_devsecops/
+Plataforma-SAST-e-DevSecOps/
 ├── app/
 │   ├── __init__.py
 │   ├── main.py
