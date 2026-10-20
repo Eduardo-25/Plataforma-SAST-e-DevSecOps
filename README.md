@@ -1,99 +1,15 @@
-# CP3 — DevSecOps e entrega
 
-Security Gate no GitHub Actions que bloqueia Pull Requests inseguros e dashboard executivo por arquivo, linha e severidade. Detalhes em [docs/CP3.md](docs/CP3.md); roteiro de apresentação em [docs/DEFESA_CP3.md](docs/DEFESA_CP3.md).
+# Plataforma SAST e DevSecOps
 
-```bash
-docker compose up --build -d
-# Dashboard:  http://localhost:8000/dashboard      API: http://localhost:8000/docs
-docker compose exec sast-api python -m pytest -q -p no:cacheprovider
-docker compose exec sast-api python -m app.gate --path samples      # demonstra um bloqueio (código de saída 1)
-```
+Projeto da disciplina de **Cybersecurity da FIAP**, desenvolvido ao longo das CP1, CP2 e CP3.
 
-| Recurso | Onde |
-|---|---|
-| Gate (CLI, códigos de saída 0/1/2) | `python -m app.gate`; política em `sast-gate.toml` |
-| Pipeline | `.github/workflows/security-gate.yml` (testes, gate, build); ative os checks obrigatórios na `main` |
-| Dashboard | `GET /dashboard` |
-| Varredura de projeto / ingestão do CI | `POST /scan/project`, `POST /api/scans/ingest` |
-| Relatórios | `GET /reports/{id}.{json,csv,md,sarif,html}` e artefato `sast-reports` do workflow |
+A ideia é analisar código Python **sem executar o arquivo**, identificar possíveis falhas de segurança e mostrar os resultados de um jeito mais fácil de acompanhar. Além da análise pela API, o projeto conta com uma página inicial, um dashboard e um Security Gate para verificar alterações no GitHub.
 
-O gate usa só os motores determinísticos (regras AST + taint); a IA continua em `/scan/semantic`. Não foram verificados neste pacote a execução real do workflow no GitHub nem o build do Docker: veja a seção final de `docs/DEFESA_CP3.md`.
+![Prévia da página inicial da plataforma](docs/home-preview.png)
 
----
+## Como rodar o projeto
 
-# CP2 — IA e análise semântica
-
-**Comece por [COMECE_AQUI_CP2.md](COMECE_AQUI_CP2.md):** instalação, cliques no Swagger, demonstração e envio ao GitHub.
-
-A plataforma agora soma à CP1 um módulo de Taint Analysis, integração com Ollama local e sugestões de remediação. O endpoint `/scan` da CP1 permanece disponível; a CP2 usa `/scan/semantic`.
-
-| Endpoint | Função |
-|---|---|
-| `GET /health` | Saúde da API |
-| `POST /scan` | Regras originais da CP1 |
-| `GET /llm/health` | Disponibilidade do Ollama/modelo |
-| `POST /scan/semantic` | Regras + fluxo de dados + revisão opcional por LLM |
-
-```bash
-docker compose up --build -d
-docker compose exec ollama ollama pull llama3.2:3b
-```
-
-Abra http://localhost:8000/docs. Na CP2, `use_llm` é falso por padrão; marque `true` para solicitar a IA real.
-
-- [Documentação técnica e limites](docs/CP2.md)
-- [Mudanças sobre a CP1](docs/ALTERACOES_CP2.md)
-- [Validação realizada](docs/VALIDACAO_CP2.md)
-
-A primeira execução baixa imagens/modelo; a geração em CPU pode demorar. `llm.status: completed` confirma resposta validada do modelo. Falhas ficam explícitas e preservam os resultados estáticos. Ainda não há evidência de inferência real incluída neste pacote.
-
----
-
-## Documentação original da CP1
-
-# Plataforma SAST & DevSecOps 
-
-Protótipo didático de análise estática para **Python**, com FastAPI, AST e Docker Compose. O scanner não executa o código analisado.
-
-## Integrantes
-
-Eduardo da Silva Lima (RM: 554804)
-
-Enzo Bonacasatta (RM: 555372)
-
-Guilherme Ulacco (RM: 558418)
-
-Matheus Hostim (RM: 556517)
-
-
-## Requisitos
-
-- Docker Desktop instalado e em execução (inclui Docker Compose).
-
-## Estrutura
-
-```text
-Plataforma_SAST_e_DevSecOps/
-├── app/
-│   ├── __init__.py
-│   ├── main.py
-│   └── scanner.py
-├── docs/
-│   └── arquitetura-c4.md
-├── samples/
-│   ├── safe.py
-│   └── vulnerable.py
-├── tests/
-│   └── test_scanner.py
-├── .dockerignore
-├── .gitignore
-├── compose.yaml
-├── Dockerfile
-├── requirements.txt
-└── README.md
-```
-
-## Iniciar com Docker Compose
+Você só precisa ter o **Docker Desktop** instalado e aberto.
 
 No terminal, dentro da pasta do projeto:
 
@@ -101,55 +17,132 @@ No terminal, dentro da pasta do projeto:
 docker compose up --build -d
 ```
 
-Verificar o estado do container:
+Depois, abra no navegador:
 
-```bash
-docker compose ps
-```
+| Página | Link | Para que serve |
+| --- | --- | --- |
+| Página inicial | http://localhost:8000/ | Acesso às funcionalidades e teste rápido do scanner |
+| Dashboard | http://localhost:8000/dashboard | Histórico das análises, filtros e relatórios |
+| Swagger | http://localhost:8000/docs | Visualizar e testar os endpoints da API |
 
-Verificar o endpoint de saúde:
+Na primeira vez, o Docker pode levar um pouco mais de tempo para baixar e preparar as imagens.
 
-```bash
-curl http://localhost:8000/health
-```
-
-Abra `http://localhost:8000/docs` para testar a API pela interface Swagger.
-
-## Executar uma análise
-
-No Swagger, abra `POST /scan`, clique em **Try it out** e envie este JSON:
-
-```json
-{
-  "filename": "vulnerable.py",
-  "source_code": "import subprocess\npassword = \"admin123\"\nentrada = input(\"Digite: \")\nresultado = eval(entrada)\nsubprocess.run(\"echo \" + entrada, shell=True)\n"
-}
-```
-
-A resposta deve conter três achados, um por regra: `SAST001`, `SAST002` e `SAST003`. O número da linha e as recomendações são incluídos no resultado. O valor do segredo não é incluído na mensagem do achado.
-
-Para testar código com sintaxe inválida, envie, por exemplo, `if True print('erro')`. A API retorna HTTP 422 e informa que o código não pôde ser analisado.
-
-## Executar os testes
-
-```bash
-docker compose run --rm sast-api pytest -q -p no:cacheprovider
-```
-
-Os testes cobrem as três regras, um cenário sem os padrões detectados, segredo em dicionário, erro de sintaxe e endpoints HTTP.
-
-## Parar o ambiente
+Para parar os containers:
 
 ```bash
 docker compose down
 ```
 
-## Regras incluídas
+## O que foi feito em cada CP
 
-| Regra | Padrão | Referência CWE | Severidade inicial |
-|---|---|---|---|
-| SAST001 | Literal de texto em variável/chave associada a senha, token ou segredo | CWE-798 | HIGH |
-| SAST002 | Chamada a `eval()` ou `exec()` | CWE-95 | HIGH |
-| SAST003 | Chamada de execução de processo com `shell=True` | CWE-78 | HIGH |
+### CP1 — Análise estática
 
-Esta é uma primeira versão educacional. Pode haver falsos positivos e falsos negativos; os resultados não substituem uma revisão de segurança completa.
+Criamos a API com **FastAPI** e o scanner usando a biblioteca **AST do Python**. Ele lê a estrutura do código e procura alguns padrões de risco, sem precisar executar o que foi enviado.
+
+As regras iniciais são:
+
+| Regra | O que procura | CWE |
+| --- | --- | --- |
+| `SAST001` | Senhas, tokens e outros possíveis segredos escritos diretamente no código | CWE-798 |
+| `SAST002` | Uso de `eval()` ou `exec()` | CWE-95 |
+| `SAST003` | Execução de comandos com `shell=True` | CWE-78 |
+
+### CP2 — Análise semântica e IA local
+
+Na segunda etapa, adicionamos **Taint Analysis** para acompanhar o caminho de dados potencialmente inseguros até operações sensíveis, como comandos e consultas SQL.
+
+Também incluímos a possibilidade de pedir uma revisão ao **Ollama**, rodando um modelo de linguagem localmente. Essa parte é opcional: a análise estática continua funcionando mesmo sem usar IA.
+
+Para baixar o modelo padrão no container:
+
+```bash
+docker compose exec ollama ollama pull llama3.2:3b
+```
+
+Depois, no scanner da página inicial ou no endpoint `POST /scan/semantic`, é só habilitar a revisão por IA. Como o modelo roda localmente, a resposta pode demorar dependendo do computador.
+
+### CP3 — Dashboard e Security Gate
+
+Na terceira etapa, fizemos a parte de acompanhamento e integração com o desenvolvimento:
+
+- **Dashboard** para consultar análises, arquivos afetados, linhas e severidades.
+- **Relatórios** em JSON, CSV, Markdown, SARIF e HTML.
+- **Security Gate** para reprovar verificações quando uma alteração ultrapassar o limite de severidade configurado.
+- **GitHub Actions** com testes, análise de segurança e build da imagem Docker.
+
+O gate usa as regras estáticas e a análise de fluxo de dados. Ele **não depende do Ollama** para decidir se uma alteração passa ou não.
+
+O workflow está no arquivo [`.github/workflows/security-gate.yml`](.github/workflows/security-gate.yml). Para o GitHub realmente impedir o merge de um PR reprovado, é necessário configurar os checks obrigatórios na proteção da branch `main`.
+
+## Testando uma análise
+
+O jeito mais simples é abrir a **[página inicial](http://localhost:8000/)**, colar um código Python no scanner e clicar em **Executar análise**.
+
+Também dá para testar pelo [Swagger](http://localhost:8000/docs), usando `POST /scan` com este exemplo:
+
+```json
+{
+  "filename": "teste.py",
+  "source_code": "senha = 'admin123'\nentrada = input('Valor: ')\nresultado = eval(entrada)\n"
+}
+```
+
+Nesse exemplo, o scanner deve encontrar a senha escrita diretamente no código e o uso de `eval()`.
+
+Para testar o Security Gate com os arquivos de exemplo vulneráveis:
+
+```bash
+docker compose exec sast-api python -m app.gate --path samples
+```
+
+Esse comando **deve terminar com código de saída 1**: o bloqueio é intencional, justamente para mostrar o gate funcionando.
+
+## Endpoints principais
+
+| Método | Endpoint | Função |
+| --- | --- | --- |
+| `GET` | `/health` | Verifica a API |
+| `POST` | `/scan` | Análise inicial da CP1 |
+| `GET` | `/llm/health` | Verifica o serviço/modelo local |
+| `POST` | `/scan/semantic` | Análise semântica e revisão opcional por IA |
+| `POST` | `/scan/project` | Analisa vários arquivos de um projeto |
+| `POST` | `/api/scans/ingest` | Recebe relatórios do CI |
+| `GET` | `/api/dashboard` | Retorna os dados do dashboard |
+| `GET` | `/api/scans` | Lista análises salvas |
+| `GET` | `/dashboard` | Abre o dashboard |
+| `GET` | `/reports/{scan_id}.{fmt}` | Baixa um relatório salvo |
+
+A página inicial mostra as rotas automaticamente. Para ver os campos de cada requisição e testar os `POST`, use o Swagger em `/docs`.
+
+## Testes
+
+Para rodar os testes automatizados:
+
+```bash
+docker compose exec sast-api python -m pytest -q -p no:cacheprovider
+```
+
+## Onde estão as coisas
+
+- `app/` — API, scanner, análise semântica, gate e relatórios.
+- `app/static/` — página inicial e dashboard.
+- `samples/` — códigos de exemplo para testar.
+- `tests/` — testes automatizados.
+- `sast-gate.toml` — configurações do Security Gate.
+- `docs/` — documentação mais detalhada das entregas.
+
+Para entender melhor cada etapa, deixamos a documentação separada: [CP2](docs/CP2.md), [CP3](docs/CP3.md) e [arquitetura C4](docs/arquitetura-c4.md).
+
+## Limitações
+
+Esse é um **projeto acadêmico**, não um scanner de segurança completo. Atualmente ele analisa código Python e trabalha com um conjunto limitado de regras. Pode deixar passar problemas ou apontar algo que não seja uma vulnerabilidade real. Por isso, os resultados precisam ser revisados.
+
+A aplicação também foi preparada para **uso local**, sem sistema de login. Não é recomendado expor a API diretamente na internet.
+
+## Integrantes
+
+- Eduardo da Silva Lima — RM 554804
+- Enzo Bonacasatta — RM 555372
+- Guilherme Ulacco — RM 558418
+- Matheus Hostim — RM 556517
+- Estevam Melo — RM 555124
