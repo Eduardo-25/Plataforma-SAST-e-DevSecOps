@@ -1,3 +1,33 @@
+# CP2 — IA e análise semântica
+
+**Comece por [COMECE_AQUI_CP2.md](COMECE_AQUI_CP2.md):** instalação, cliques no Swagger, demonstração e envio ao GitHub.
+
+A plataforma agora soma à CP1 um módulo de Taint Analysis, integração com Ollama local e sugestões de remediação. O endpoint `/scan` da CP1 permanece disponível; a CP2 usa `/scan/semantic`.
+
+| Endpoint | Função |
+|---|---|
+| `GET /health` | Saúde da API |
+| `POST /scan` | Regras originais da CP1 |
+| `GET /llm/health` | Disponibilidade do Ollama/modelo |
+| `POST /scan/semantic` | Regras + fluxo de dados + revisão opcional por LLM |
+
+```bash
+docker compose up --build -d
+docker compose exec ollama ollama pull llama3.2:3b
+```
+
+Abra http://localhost:8000/docs. Na CP2, `use_llm` é falso por padrão; marque `true` para solicitar a IA real.
+
+- [Documentação técnica e limites](docs/CP2.md)
+- [Mudanças sobre a CP1](docs/ALTERACOES_CP2.md)
+- [Validação realizada](docs/VALIDACAO_CP2.md)
+
+A primeira execução baixa imagens/modelo; a geração em CPU pode demorar. `llm.status: completed` confirma resposta validada do modelo. Falhas ficam explícitas e preservam os resultados estáticos. Ainda não há evidência de inferência real incluída neste pacote.
+
+---
+
+## Documentação original da CP1
+
 # Plataforma SAST & DevSecOps 
 
 Protótipo didático de análise estática para **Python**, com FastAPI, AST e Docker Compose. O scanner não executa o código analisado.

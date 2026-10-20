@@ -1,4 +1,4 @@
-"""API HTTP do protótipo SAST do Checkpoint 1."""
+"""API SAST: CP1 preservada e CP2 com fluxo de dados e LLM local."""
 
 from collections import Counter
 
@@ -8,12 +8,12 @@ from pydantic import BaseModel, Field
 from app.scanner import scan_source
 
 app = FastAPI(
-    title="Plataforma SAST - CP1",
+    title="Plataforma SAST - CP1 + CP2",
     description=(
         "Protótipo de análise estática Python. O código enviado é convertido em AST "
         "e inspecionado sem ser executado."
     ),
-    version="0.1.0",
+    version="0.2.0",
 )
 
 
@@ -56,3 +56,25 @@ def scan(request: ScanRequest) -> dict:
             "não garante que o código esteja livre de vulnerabilidades."
         ),
     }
+
+
+class SemanticScanRequest(ScanRequest):
+    use_llm: bool = Field(default=False, description="Ative para solicitar revisão real ao Ollama local.")
+
+
+@app.get("/llm/health", tags=["CP2 - IA local"])
+def ollama_health() -> dict:
+    from app.llm import llm_health
+    return llm_health()
+
+
+@app.post("/scan/semantic", tags=["CP2 - IA local"])
+def semantic_scan(request: SemanticScanRequest) -> dict:
+    from app.semantic import analyze
+    try:
+        return analyze(request.source_code, request.filename, request.use_llm)
+    except (SyntaxError, ValueError, RecursionError) as exc:
+        raise HTTPException(status_code=422, detail={
+            "message": "Código Python inválido ou complexo demais para este protótipo.",
+            "line": getattr(exc, "lineno", None),
+        }) from exc
