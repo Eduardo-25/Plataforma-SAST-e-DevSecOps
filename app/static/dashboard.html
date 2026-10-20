@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; img-src data:; base-uri 'none'; form-action 'none'">
+<title>Plataforma SAST · Dashboard executivo</title>
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#171717; --panel:#211919; --panel-2:#2a1f1f; --line:#3d2f2f; --text:#eee8e2; --muted:#ab9f97;
+  --yellow:#ffd21e; --red:#ff4d4d; --orange:#ff9f43; --blue:#4c8dff; --green:#3fd68f; --gray:#8c8c8c;
+  --sans:"Bahnschrift","Segoe UI Variable Display","Segoe UI","Helvetica Neue",Arial,sans-serif;
+  --code:"Cascadia Mono",Consolas,"SF Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;color:var(--text);font:15px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 24px 64px}
+header.top{display:flex;flex-wrap:wrap;gap:14px 24px;align-items:center;justify-content:space-between;margin-bottom:24px}
+h1{margin:0;font-size:22px;font-weight:700;color:var(--yellow);font-variation-settings:"wdth" 90}
+h1 small{display:block;font-size:13px;font-weight:400;color:var(--muted);font-variation-settings:normal}
+.tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.tools select,.btn{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:7px 12px}
+.tools select{max-width:260px}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--yellow);border-color:var(--yellow);color:#1b1500;font-weight:600}
+a.btn{text-decoration:none;display:inline-block;color:var(--text)}
+
+/* veredito */
+.verdict{display:grid;grid-template-columns:1fr auto;gap:12px 32px;align-items:end;padding:26px 28px;background:var(--panel);border-left:10px solid var(--gray);border-radius:4px}
+.verdict.blocked{border-left-color:var(--red);background:linear-gradient(90deg,#3a1818 0,var(--panel) 65%)}
+.verdict.passed{border-left-color:var(--green);background:linear-gradient(90deg,#16301f 0,var(--panel) 65%)}
+.verdict h2{margin:0;font-size:clamp(34px,6vw,56px);line-height:1.02;font-weight:700;letter-spacing:-.01em;font-variation-settings:"wdth" 80}
+.verdict.blocked h2{color:var(--red)} .verdict.passed h2{color:var(--green)}
+.verdict p{margin:8px 0 0;color:var(--text);max-width:62ch}
+.verdict .meta{margin-top:6px;color:var(--muted);font-size:13px}
+.verdict .count{text-align:right}
+.verdict .count b{display:block;font-size:clamp(40px,6vw,64px);line-height:1;font-variant-numeric:tabular-nums;font-variation-settings:"wdth" 80}
+.verdict .count span{color:var(--muted);font-size:13px}
+
+section{margin-top:28px}
+h3{margin:0 0 12px;font-size:16px;font-weight:600}
+h3 span{color:var(--muted);font-weight:400;font-size:13px;margin-left:8px}
+
+/* barra de severidade */
+.sevbar{display:flex;height:34px;border-radius:4px;overflow:hidden;background:var(--panel-2)}
+.sevbar button{border:0;padding:0;min-width:3px;height:100%;transition:width .7s cubic-bezier(.2,.7,.2,1)}
+.sevbar button[aria-pressed=true]{outline:2px solid #fff;outline-offset:-2px}
+.sevbar .none{flex:1;display:grid;place-items:center;color:var(--green);font-size:13px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 22px;margin-top:12px}
+.legend button{background:none;border:0;padding:2px 0;display:flex;gap:8px;align-items:center;color:var(--text)}
+.legend button[aria-pressed=true]{text-decoration:underline;text-underline-offset:4px}
+.chip{width:12px;height:12px;border-radius:2px;display:inline-block;flex:none}
+.legend b{font-variant-numeric:tabular-nums}
+
+.cols{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:32px}
+.stack>section:first-child{margin-top:28px}
+@media(max-width:860px){.cols{grid-template-columns:1fr;gap:0}.verdict{grid-template-columns:1fr}.verdict .count{text-align:left}}
+
+.rows{display:grid;gap:4px}
+.row{display:grid;grid-template-columns:minmax(90px,1.1fr) 2fr 34px;gap:12px;align-items:center;width:100%;text-align:left;background:none;border:0;border-radius:4px;padding:6px 8px}
+.row:hover{background:var(--panel)}
+.row[aria-pressed=true]{background:var(--panel-2);box-shadow:inset 3px 0 var(--yellow)}
+.row .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--code);font-size:13px}
+.row .bar{display:flex;height:14px;background:var(--panel-2);border-radius:2px;overflow:hidden}
+.row .bar i{display:block;height:100%}
+.row .n{text-align:right;font-variant-numeric:tabular-nums}
+.cwe-row{grid-template-columns:minmax(0,1fr) 34px}
+.cwe-row .lbl{display:block}.cwe-row .lbl small{color:var(--muted);display:block}
+
+.history{display:flex;align-items:flex-end;gap:4px;height:110px;padding-bottom:2px;border-bottom:1px solid var(--line)}
+.history button{flex:1;max-width:28px;min-height:4px;border:0;border-radius:2px 2px 0 0;padding:0}
+.history button[aria-current=true]{outline:2px solid var(--yellow);outline-offset:2px}
+.hint{color:var(--muted);font-size:13px;margin:8px 0 0}
+
+/* tabela */
+.filters{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
+.filters input[type=search],.filters select{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:7px 12px}
+.filters input[type=search]{flex:1;min-width:180px}
+.filters label{display:flex;gap:6px;align-items:center;color:var(--muted);font-size:14px}
+.active-filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.tag{background:var(--panel-2);border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:13px}
+.tag button{background:none;border:0;padding:0 0 0 6px;color:var(--muted)}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:6px}
+table{width:100%;border-collapse:collapse;min-width:720px}
+th,td{padding:10px 14px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+th{font-weight:600;color:var(--muted);font-size:13px;background:var(--panel);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+tr.f{cursor:pointer} tr.f:hover td{background:var(--panel)}
+td.loc{font-family:var(--code);font-size:13px;word-break:break-all}
+td.loc b{color:var(--yellow);font-weight:600}
+.sev{display:inline-flex;gap:7px;align-items:center;white-space:nowrap;font-weight:600}
+.dim{opacity:.55}
+tr.detail td{background:var(--panel);padding:16px 14px 20px 24px}
+.detail h4{margin:0 0 6px;font-size:14px}
+.detail .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}.detail .grid>div{min-width:0}
+@media(max-width:860px){.detail .grid{grid-template-columns:1fr}}
+.trace{margin:0;padding:0;list-style:none;border-left:2px solid var(--line)}
+.trace li{padding:3px 0 3px 14px;position:relative;font-size:14px}
+.trace li::before{content:"";position:absolute;left:-6px;top:9px;width:10px;height:10px;border-radius:50%;background:var(--bg);border:2px solid var(--blue)}
+.trace li.sink::before{border-color:var(--red);background:var(--red)}
+.trace code,.detail pre{font-family:var(--code);font-size:13px}
+.detail pre{margin:8px 0 0;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:12px;overflow-x:auto;white-space:pre}
+.detail p{margin:0 0 6px}.detail .note{color:var(--muted);font-size:13px}
+.empty{padding:48px 24px;text-align:center;color:var(--muted)}
+.empty h2{color:var(--text);margin:0 0 8px;font-size:24px}
+.foot{margin-top:40px;color:var(--muted);font-size:13px;max-width:80ch}
+dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:24px;width:min(480px,92vw)}
+dialog::backdrop{background:rgba(0,0,0,.65)}
+dialog h3{font-size:18px}
+dialog label{display:block;margin:14px 0 4px;color:var(--muted);font-size:14px}
+dialog input[type=text]{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 12px}
+dialog .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+.err{color:var(--red);margin:12px 0 0;min-height:1.4em}
+@media(max-width:860px){
+  table,thead,tbody,tr,td{display:block;min-width:0}
+  thead{position:absolute;left:-9999px}
+  tr.f{padding:12px 14px;border-bottom:1px solid var(--line)}
+  tr.f td{border:0;padding:1px 0}
+  tr.f td:nth-child(3),tr.f td:nth-child(4){display:inline-block;color:var(--muted);font-size:13px;margin-right:10px}
+  tr.detail td{padding:14px}
+  .tablewrap{overflow-x:visible}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>Plataforma SAST<small>Dashboard executivo de segurança</small></h1>
+    <div class="tools" id="tools"></div>
+  </header>
+  <main id="main" aria-live="polite"></main>
+  <p class="foot">Análise estática aproximada (regras AST e rastreamento de dados) apenas para Python. Ausência de achados não prova que o código é seguro. A severidade efetiva rebaixa um nível fluxos que dependem só de parâmetros de função assumidos como externos; a severidade estática original fica no detalhe de cada achado.</p>
+</div>
+
+<dialog id="scan-dialog">
+  <h3>Analisar arquivos Python</h3>
+  <p class="hint">Os arquivos são enviados à API local, analisados como texto e nunca executados.</p>
+  <label for="proj">Nome do projeto</label>
+  <input type="text" id="proj" value="meu-projeto" maxlength="100">
+  <label for="files">Arquivos .py (ou uma pasta inteira)</label>
+  <input type="file" id="files" accept=".py" multiple>
+  <input type="file" id="folder" webkitdirectory style="margin-top:8px">
+  <div class="err" id="scan-err" role="alert"></div>
+  <div class="actions">
+    <button class="btn" id="scan-cancel" type="button">Cancelar</button>
+    <button class="btn primary" id="scan-go" type="button">Analisar</button>
+  </div>
+</dialog>
+
+<script>
+"use strict";
+const EMBEDDED = /*__SAST_DATA__*/null;
+const SEV = ["CRITICAL","HIGH","MEDIUM","LOW","INFO"];
+const SEV_PT = {CRITICAL:"Crítica",HIGH:"Alta",MEDIUM:"Média",LOW:"Baixa",INFO:"Informativa"};
+const SEV_COLOR = {CRITICAL:"var(--red)",HIGH:"var(--orange)",MEDIUM:"var(--yellow)",LOW:"var(--blue)",INFO:"var(--gray)"};
+const CWE_NAME = {"CWE-798":"Credenciais embutidas no código","CWE-95":"Execução dinâmica de código","CWE-78":"Injeção de comando de sistema","CWE-89":"Injeção de SQL"};
+const SOURCE_PT = {"github-actions":"GitHub Actions",ci:"CI",cli:"linha de comando",api:"API",manual:"manual"};
+
+const state = {data:null, sev:null, file:null, cwe:"", q:"", showSuppressed:false, sort:"sev", open:new Set()};
+
+const h = (tag, props = {}, ...kids) => {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) {
+    if (k === "class") el.className = v;
+    else if (k === "style") el.style.cssText = v;
+    else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+    else if (k.startsWith("aria-") && typeof v === "boolean") el.setAttribute(k, String(v));
+    else if (v === true) el.setAttribute(k, "");
+    else if (v !== false && v != null) el.setAttribute(k, v);
+  }
+  for (const kid of kids.flat(Infinity)) if (kid != null && kid !== false) el.append(kid);
+  return el;
+};
+const $ = id => document.getElementById(id);
+const fmtDate = iso => { const d = new Date(iso); return isNaN(d) ? "" : d.toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"}); };
+const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+
+async function load(query = "") {
+  if (EMBEDDED) { state.data = EMBEDDED; return render(); }
+  try {
+    const res = await fetch("/api/dashboard" + query, {headers:{Accept:"application/json"}});
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    state.data = await res.json();
+  } catch (err) {
+    $("main").replaceChildren(h("div",{class:"empty"}, h("h2",{},"Não foi possível carregar os dados"),
+      h("p",{},"Confirme que a API está em execução (docker compose ps) e recarregue a página.")));
+    return;
+  }
+  state.sev = state.file = null; state.cwe = ""; state.q = ""; state.open.clear();
+  render();
+}
+
+function active(scan) { return scan.findings.filter(f => !f.suppressed); }
+function visible() {
+  const scan = state.data.scan, q = state.q.trim().toLowerCase();
+  let list = scan.findings.filter(f => state.showSuppressed || !f.suppressed);
+  if (state.sev) list = list.filter(f => f.effective_severity === state.sev);
+  if (state.file) list = list.filter(f => f.file === state.file);
+  if (state.cwe) list = list.filter(f => f.cwe === state.cwe);
+  if (q) list = list.filter(f => `${f.file} ${f.rule_id} ${f.cwe} ${f.title}`.toLowerCase().includes(q));
+  const rank = s => SEV.indexOf(s);
+  return [...list].sort(state.sort === "file"
+    ? (a, b) => a.file.localeCompare(b.file) || a.line - b.line
+    : (a, b) => rank(a.effective_severity) - rank(b.effective_severity) || a.file.localeCompare(b.file) || a.line - b.line);
+}
+
+function render() {
+  const {scan, standalone} = state.data;
+  renderTools();
+  const main = $("main");
+  if (!scan) {
+    main.replaceChildren(h("div",{class:"empty"},
+      h("h2",{},"Nenhuma análise ainda"),
+      h("p",{},"Analise arquivos Python por aqui ou rode o Security Gate no pipeline com --ingest-url para alimentar este painel."),
+      h("p",{}, h("button",{class:"btn primary",onclick:openScanDialog},"Analisar arquivos"))));
+    return;
+  }
+  main.replaceChildren(
+    verdictBlock(scan), severityBlock(scan),
+    h("div",{class:"cols"},
+      h("section",{}, h("h3",{},"Arquivos com achados", h("span",{},`${scan.files_with_findings} de ${scan.files_scanned} arquivos`)), h("div",{class:"rows",id:"files"})),
+      h("div",{class:"stack"},
+        h("section",{}, h("h3",{},"Tipos de falha (CWE)"), h("div",{class:"rows",id:"cwes"})),
+        h("section",{}, h("h3",{},"Histórico de análises"), h("div",{id:"history"})))),
+    h("section",{}, h("h3",{},"Achados por arquivo e linha", h("span",{id:"count"})), h("div",{id:"filters"}), h("div",{id:"table"})));
+  renderPanels(); renderFilters(); renderTable();
+}
+
+function renderTools() {
+  const {projects = [], scan, standalone} = state.data, tools = $("tools");
+  tools.replaceChildren();
+  if (standalone) { if (scan) tools.append(exportLinks(scan)); return; }
+  if (projects.length > 1) {
+    tools.append(h("select",{"aria-label":"Projeto",onchange:e => load("?project=" + encodeURIComponent(e.target.value))},
+      projects.map(p => h("option",{value:p,selected:scan && scan.project === p},p))));
+  }
+  if (scan) tools.append(exportLinks(scan));
+  tools.append(h("button",{class:"btn primary",onclick:openScanDialog},"Nova análise"));
+}
+
+function exportLinks(scan) {
+  const box = h("span",{class:"tools"});
+  if (state.data.standalone) {
+    box.append(h("button",{class:"btn",onclick:() => download("sast-relatorio.json", JSON.stringify(scan,null,2), "application/json")},"Baixar JSON"),
+               h("button",{class:"btn",onclick:() => download("sast-relatorio.csv", toCsv(scan), "text/csv")},"Baixar CSV"));
+  } else if (scan.scan_id) {
+    for (const [fmt, label] of [["csv","CSV"],["json","JSON"],["md","Markdown"],["sarif","SARIF"],["html","HTML"]])
+      box.append(h("a",{class:"btn",href:`/reports/${scan.scan_id}.${fmt}`,download:""},label));
+  }
+  return box;
+}
+function download(name, text, type) {
+  const url = URL.createObjectURL(new Blob([text], {type}));
+  const a = h("a",{href:url,download:name}); document.body.append(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+function toCsv(scan) {
+  const cell = v => { let s = String(v ?? ""); if (/^[=+\-@]/.test(s)) s = "'" + s; return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s; };
+  const rows = [["arquivo","linha","severidade","regra","cwe","titulo","suprimido"]];
+  for (const f of scan.findings) rows.push([f.file,f.line,f.effective_severity,f.rule_id,f.cwe,f.title,f.suppressed?"sim":"nao"]);
+  return rows.map(r => r.map(cell).join(",")).join("\n");
+}
+
+function verdictBlock(scan) {
+  const g = scan.gate, blocked = g.decision === "blocked", t = scan.trigger || {}, s = scan.summary;
+  const where = [t.ref, t.commit].filter(Boolean).join(" @ ");
+  return h("div",{class:"verdict " + g.decision, role:"status"},
+    h("div",{},
+      h("h2",{}, blocked ? "Merge bloqueado" : "Aprovado pelo gate"),
+      h("p",{}, blocked ? g.reasons.join(" ") : `Nenhum achado ativo com severidade ${SEV_PT[g.policy.fail_on]?.toLowerCase() || g.policy.fail_on} ou superior.`),
+      h("div",{class:"meta"}, [scan.project, where, SOURCE_PT[t.source] || t.source, fmtDate(scan.generated_at),
+        s.suppressed ? plural(s.suppressed,"achado suprimido","achados suprimidos") : ""].filter(Boolean).join("  ·  "),
+        t.run_url ? h("span",{}, "  ·  ", h("a",{href:t.run_url,rel:"noopener",style:"color:var(--blue)"},"ver execução")) : "")),
+    h("div",{class:"count"}, h("b",{}, String(s.active)), h("span",{}, s.active === 1 ? "achado ativo" : "achados ativos")));
+}
+
+function severityBlock(scan) {
+  const by = scan.summary.by_severity, total = scan.summary.active;
+  const bar = h("div",{class:"sevbar",role:"group","aria-label":"Distribuição por severidade"});
+  if (!total) bar.append(h("div",{class:"none"},"Nenhum achado ativo"));
+  const legend = h("div",{class:"legend"});
+  for (const sev of SEV) {
+    const n = by[sev] || 0; if (!n && sev === "INFO") continue;
+    const press = state.sev === sev;
+    if (n) bar.append(h("button",{style:`width:${(n/total*100).toFixed(2)}%;background:${SEV_COLOR[sev]}`,"aria-pressed":press,
+      "aria-label":`${SEV_PT[sev]}: ${n}`,title:`${SEV_PT[sev]}: ${n}`,onclick:() => toggle("sev",sev)}));
+    legend.append(h("button",{"aria-pressed":press,onclick:() => toggle("sev",sev)}, h("i",{class:"chip",style:`background:${SEV_COLOR[sev]}`}), SEV_PT[sev], " ", h("b",{},String(n))));
+  }
+  const sec = h("section",{}, h("h3",{},"Severidade", h("span",{},"clique para filtrar")), bar, legend);
+  sec.id = "sevsec"; return sec;
+}
+
+function toggle(key, value) { state[key] = state[key] === value ? (key === "cwe" ? "" : null) : value; renderPanels(); renderFilters(); renderTable(); const s = $("sevsec"); if (s) s.replaceWith(severityBlock(state.data.scan)); }
+
+function renderPanels() {
+  const scan = state.data.scan, act = active(scan);
+  const files = {}, cwes = {};
+  for (const f of act) { (files[f.file] ||= {}); files[f.file][f.effective_severity] = (files[f.file][f.effective_severity]||0) + 1; cwes[f.cwe] = (cwes[f.cwe]||0) + 1; }
+  const fileList = Object.entries(files).map(([name,c]) => [name, c, Object.values(c).reduce((a,b)=>a+b,0)]).sort((a,b) => b[2]-a[2] || a[0].localeCompare(b[0]));
+  const max = Math.max(1, ...fileList.map(x => x[2]));
+  $("files").replaceChildren(...(fileList.length ? fileList.slice(0,12).map(([name,c,n]) =>
+    h("button",{class:"row","aria-pressed":state.file === name,title:name,onclick:() => toggle("file",name)},
+      h("span",{class:"name"},name),
+      h("span",{class:"bar"}, SEV.filter(s => c[s]).map(s => h("i",{style:`width:${c[s]/max*100}%;background:${SEV_COLOR[s]}`,title:`${SEV_PT[s]}: ${c[s]}`}))),
+      h("span",{class:"n"},String(n)))) : [h("p",{class:"hint"},"Nenhum arquivo com achados ativos.")]));
+  const cweList = Object.entries(cwes).sort((a,b) => b[1]-a[1]), cmax = Math.max(1, ...cweList.map(x => x[1]));
+  $("cwes").replaceChildren(...(cweList.length ? cweList.map(([id,n]) =>
+    h("button",{class:"row cwe-row","aria-pressed":state.cwe === id,onclick:() => toggle("cwe",id)},
+      h("span",{class:"lbl"}, id, h("small",{},CWE_NAME[id] || "")), h("span",{class:"n"},String(n)))) : [h("p",{class:"hint"},"Sem falhas ativas.")]));
+  const hist = state.data.history || [], hmax = Math.max(1, ...hist.map(x => x.active));
+  $("history").replaceChildren(
+    h("div",{class:"history"}, hist.map(x => h("button",{style:`height:${Math.max(4,x.active/hmax*100)}%;background:${x.decision === "blocked" ? "var(--red)" : "var(--green)"}`,
+      "aria-current":x.id != null && x.id === scan.scan_id,"aria-label":`${fmtDate(x.generated_at)}: ${x.decision === "blocked" ? "bloqueado" : "aprovado"}, ${x.active} ativos`,
+      title:`${fmtDate(x.generated_at)} · ${x.decision === "blocked" ? "bloqueado" : "aprovado"} · ${x.active} ativos`,
+      disabled:state.data.standalone || x.id == null,onclick:() => load("?scan_id=" + x.id)}))),
+    h("p",{class:"hint"}, hist.length > 1 ? "Cada coluna é uma análise: altura = achados ativos; vermelho = bloqueada, verde = aprovada." : "O histórico aparece após a segunda análise."));
+}
+
+function renderFilters() {
+  const scan = state.data.scan, cwes = [...new Set(scan.findings.map(f => f.cwe))].sort();
+  const box = $("filters");
+  const search = h("input",{type:"search",placeholder:"Buscar arquivo, regra ou descrição","aria-label":"Buscar achados",value:state.q,oninput:e => { state.q = e.target.value; renderTable(); }});
+  const sort = h("select",{"aria-label":"Ordenar",onchange:e => { state.sort = e.target.value; renderTable(); }},
+    h("option",{value:"sev",selected:state.sort==="sev"},"Ordenar por severidade"), h("option",{value:"file",selected:state.sort==="file"},"Ordenar por arquivo e linha"));
+  const cweSel = h("select",{"aria-label":"Filtrar por CWE",onchange:e => { state.cwe = e.target.value; renderPanels(); renderTable(); }},
+    h("option",{value:""},"Todos os CWE"), cwes.map(c => h("option",{value:c,selected:state.cwe===c},c)));
+  const sup = h("label",{}, h("input",{type:"checkbox",checked:state.showSuppressed,onchange:e => { state.showSuppressed = e.target.checked; renderTable(); }}), "Mostrar suprimidos");
+  const tags = [];
+  for (const [k,label] of [["sev",state.sev && SEV_PT[state.sev]],["file",state.file]]) if (label) tags.push(h("span",{class:"tag"},label,h("button",{"aria-label":"Remover filtro "+label,onclick:() => toggle(k,state[k])},"×")));
+  box.replaceChildren(h("div",{class:"filters"},search,cweSel,sort,sup), tags.length ? h("div",{class:"active-filters"},tags) : "");
+}
+
+function renderTable() {
+  const list = visible(), total = state.data.scan.findings.length;
+  $("count").textContent = list.length === total ? plural(total,"achado","achados") : `${list.length} de ${total}`;
+  const host = $("table");
+  if (!list.length) { host.replaceChildren(h("div",{class:"empty"}, h("p",{}, total ? "Nenhum achado corresponde aos filtros." : "Esta análise não encontrou achados nas regras implementadas."))); return; }
+  const body = h("tbody");
+  for (const f of list) {
+    const open = state.open.has(f.fingerprint + f.id);
+    body.append(h("tr",{class:"f" + (f.suppressed ? " dim" : ""),tabindex:0,"aria-expanded":open,
+      onclick:() => { const k = f.fingerprint + f.id; state.open.has(k) ? state.open.delete(k) : state.open.add(k); renderTable(); },
+      onkeydown:e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.currentTarget.click(); } }},
+      h("td",{}, h("span",{class:"sev"}, h("i",{class:"chip",style:`background:${SEV_COLOR[f.effective_severity]}`}), SEV_PT[f.effective_severity])),
+      h("td",{class:"loc"}, f.file, ":", h("b",{},String(f.line))),
+      h("td",{}, f.rule_id), h("td",{}, f.cwe),
+      h("td",{}, f.title, f.suppressed ? h("div",{class:"note"},"Suprimido" + (f.suppression_reason ? ": " + f.suppression_reason : "")) : "")));
+    if (open) body.append(h("tr",{class:"detail"}, h("td",{colspan:5}, detail(f))));
+  }
+  host.replaceChildren(h("div",{class:"tablewrap"}, h("table",{}, h("thead",{}, h("tr",{}, ["Severidade","Arquivo:linha","Regra","CWE","Descrição"].map(t => h("th",{scope:"col"},t)))), body)));
+}
+
+function detail(f) {
+  const trace = h("ul",{class:"trace"});
+  (f.sources || []).forEach(s => trace.append(h("li",{}, `linha ${s.line}: origem `, h("code",{},s.name), s.kind === "parameter_assumption" ? " (parâmetro assumido como externo)" : "")));
+  (f.propagation || []).forEach(p => trace.append(h("li",{}, `linha ${p.line}: propaga por `, h("code",{},p.variable))));
+  trace.append(h("li",{class:"sink"}, `linha ${f.line}: destino sensível `, h("code",{}, f.sink || f.rule_id)));
+  const hasFlow = f.analysis === "taint";
+  const rem = f.remediation || {};
+  return h("div",{class:"grid"},
+    h("div",{},
+      h("h4",{},"Por que foi apontado"), h("p",{}, f.message),
+      h("p",{class:"note"}, `Severidade estática ${SEV_PT[f.severity] || f.severity}` + (f.severity !== f.effective_severity ? `, efetiva ${SEV_PT[f.effective_severity]}` : "") + `. Confiança ${f.confidence}. Regras: ${(f.related_rules || [f.rule_id]).join(", ")}.`),
+      hasFlow ? [h("h4",{style:"margin-top:14px"},"Caminho dos dados"), trace] : ""),
+    h("div",{}, h("h4",{},"Como corrigir"), h("p",{}, rem.explanation || ""),
+      rem.code ? h("pre",{}, h("code",{}, rem.code)) : "",
+      h("p",{class:"note",style:"margin-top:8px"},"Exemplo de padrão seguro; adapte ao seu contexto. Nada é aplicado ao arquivo.")));
+}
+
+/* nova análise */
+function openScanDialog() { $("scan-err").textContent = ""; $("scan-dialog").showModal(); }
+$("scan-cancel").onclick = () => $("scan-dialog").close();
+$("scan-go").onclick = async () => {
+  const err = $("scan-err"), picked = [...$("files").files, ...$("folder").files].filter(f => f.name.endsWith(".py"));
+  const skip = /(^|\/)(\.git|\.venv|venv|node_modules|__pycache__)\//;
+  const chosen = picked.filter(f => !skip.test(f.webkitRelativePath || f.name));
+  if (!chosen.length) { err.textContent = "Selecione ao menos um arquivo .py."; return; }
+  if (chosen.length > 500) { err.textContent = "O limite é de 500 arquivos por análise."; return; }
+  $("scan-go").disabled = true; err.textContent = "Analisando…";
+  try {
+    const files = await Promise.all(chosen.map(async f => ({path:f.webkitRelativePath || f.name, source_code:await f.text()})));
+    const res = await fetch("/scan/project",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({project:$("proj").value.trim() || "projeto",files})});
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.detail?.message || (Array.isArray(e.detail) ? "Dados inválidos (verifique o nome do projeto e o tamanho dos arquivos)." : "Falha " + res.status)); }
+    $("scan-dialog").close(); await load("?project=" + encodeURIComponent($("proj").value.trim() || "projeto"));
+  } catch (e) { err.textContent = e.message; }
+  finally { $("scan-go").disabled = false; }
+};
+
+load();
+</script>
+</body>
+</html>

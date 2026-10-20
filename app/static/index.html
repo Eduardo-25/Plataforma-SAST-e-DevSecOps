@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; img-src data:; base-uri 'none'; form-action 'none'">
+<title>SAST Platform | Central de segurança</title>
+<style>
+:root{color-scheme:dark;--bg:#121212;--panel:#1c1b1a;--panel2:#24211f;--line:#35312d;--text:#f7f2e9;--muted:#a8a099;--yellow:#ffd21e;--amber:#eab854;--green:#65dbaa;--red:#ff777a;--blue:#8db5ff;--mono:"Cascadia Code","Cascadia Mono",Consolas,monospace;--sans:"Bahnschrift","Segoe UI Variable Display","Segoe UI",Arial,sans-serif}
+*{box-sizing:border-box}[hidden]{display:none!important}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 var(--sans);-webkit-font-smoothing:antialiased}a{color:inherit;text-decoration:none}button,input,select,textarea{font:inherit;color:inherit}button{cursor:pointer}button:disabled{opacity:.65;cursor:progress}:focus-visible{outline:2px solid var(--yellow);outline-offset:3px}::selection{background:var(--yellow);color:#161616}
+.container{max-width:1160px;margin:0 auto;padding:0 26px}.top{border-bottom:1px solid var(--line);background:rgba(18,18,18,.95)}.top-in{min-height:76px;display:flex;align-items:center;justify-content:space-between;gap:16px}.brand{display:flex;align-items:center;gap:12px;font-weight:800;letter-spacing:.08em}.mark{width:41px;height:41px;border:1px solid #6c592a;background:#292415;color:var(--yellow);display:grid;place-items:center;border-radius:11px;font-family:var(--mono);font-size:20px;transform:rotate(-5deg)}.brand span{display:block;line-height:1.1}.brand small{display:block;font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.17em;margin-top:5px}.nav{display:flex;align-items:center;gap:23px}.nav a{font-size:13px;color:var(--muted);font-weight:650}.nav a:hover,.foot a:hover{color:var(--yellow)}.nav .nav-cta{border:1px solid #76632f;border-radius:8px;color:var(--yellow);padding:10px 14px}
+.hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(295px,.85fr);gap:42px;align-items:center;padding:77px 0 63px}.eyebrow{color:var(--yellow);font-family:var(--mono);font-size:12px;letter-spacing:.14em;font-weight:700;text-transform:uppercase}.eyebrow:before{content:"";display:inline-block;width:7px;height:7px;background:var(--yellow);border-radius:50%;margin-right:12px;box-shadow:0 0 12px #ffc928}.hero h1{font-size:clamp(44px,5.7vw,72px);line-height:1.065;letter-spacing:-.055em;margin:20px 0 22px;font-weight:800;max-width:650px}.hero h1 em{font-style:normal;color:var(--yellow)}.hero .lead{color:var(--muted);font-size:17px;max-width:540px;margin:0 0 29px}.actions{display:flex;flex-wrap:wrap;gap:12px}.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;background:#242220;border:1px solid #4b4238;border-radius:9px;padding:12px 18px;font-size:13px;font-weight:750;transition:background .15s,border .15s,transform .15s}.btn:hover{background:#302a23;border-color:#8e7843;transform:translateY(-1px)}.btn.yellow{color:#181610;background:var(--yellow);border-color:var(--yellow)}.btn.yellow:hover{background:#ffe269}.btn.small{padding:8px 12px;font-size:12px}.muted{color:var(--muted)}.hero-note{display:flex;gap:16px;align-items:center;margin-top:27px;color:var(--muted);font-family:var(--mono);font-size:11px}.hero-note span:before{content:"✓";color:var(--green);margin-right:8px}
+.terminal{border:1px solid #484037;border-radius:15px;overflow:hidden;background:#191817;box-shadow:0 25px 90px rgba(0,0,0,.27);transform:rotate(1deg)}.termbar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #39332d;background:#24211e;color:#aaa39b;font:12px var(--mono)}.dots{display:flex;gap:6px}.dots i{width:9px;height:9px;border-radius:50%;background:#5c5046}.dots i:first-child{background:#f07764}.dots i:nth-child(2){background:#e4bc51}.dots i:nth-child(3){background:#63b58a}.termcode{padding:24px 24px 9px;font:13px/1.9 var(--mono);white-space:pre-wrap;overflow-wrap:anywhere}.termcode .prompt{color:var(--yellow)}.termcode .comment{color:#898580}.termcode .purple{color:#c5a5fa}.termcode .cyan{color:#8cbed4}.term-summary{margin:10px 20px 20px;border:1px solid #4b3532;background:#2a1c1b;border-radius:9px;padding:15px 17px}.term-summary b{font:12px var(--mono);color:var(--red)}.term-summary p{margin:6px 0 0;color:#c6b2ae;font:12px/1.5 var(--mono)}
+.status-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:68px}.status-card{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:17px 19px;min-width:0}.status-card .label{font:11px var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.1em}.status-card .value{display:flex;align-items:center;gap:9px;margin-top:10px;font-size:19px;font-weight:750;line-height:1.25}.dot{width:9px;height:9px;border-radius:50%;background:#8d8580;flex:0 0 auto}.dot.ok{background:var(--green);box-shadow:0 0 12px #65dbaa55}.dot.bad{background:var(--red)}.dot.warn{background:var(--amber)}
+.section{margin-bottom:68px;scroll-margin-top:26px}.section-heading{display:flex;justify-content:space-between;gap:16px;align-items:end;margin-bottom:20px}.section h2{font-size:28px;line-height:1.2;letter-spacing:-.035em;margin:7px 0 0}.section-desc{margin:8px 0 0;color:var(--muted);font-size:14px}.section-number{font:12px var(--mono);color:var(--yellow);letter-spacing:.12em}.feature-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}.feature{display:flex;flex-direction:column;min-height:205px;padding:24px;background:var(--panel);border:1px solid var(--line);border-radius:12px;transition:border .2s,background .2s}.feature:hover{border-color:#b08e43;background:#25221d}.feature-icon{font:22px var(--mono);color:var(--yellow);margin-bottom:20px}.feature h3{margin:0 0 9px;font-size:17px}.feature p{margin:0 0 22px;font-size:13px;color:var(--muted)}.feature .feature-link{margin-top:auto;color:var(--yellow);font-size:12px;font-weight:750}
+.scan-layout{display:grid;grid-template-columns:1.1fr .9fr;border:1px solid var(--line);border-radius:14px;background:var(--panel);overflow:hidden}.scan-left{padding:25px;border-right:1px solid var(--line)}.scan-right{display:flex;flex-direction:column;min-width:0;padding:25px;background:#191817}.field-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:9px}.field-title{font-size:12px;color:var(--muted);font-weight:750}.label-tag{font:11px var(--mono);color:var(--yellow);border:1px solid #5d4a26;padding:3px 7px;border-radius:5px}.field-input{width:100%;border:1px solid var(--line);background:#131313;padding:11px 13px;border-radius:8px;outline:none;font:13px var(--mono)}.field-input:focus{border-color:var(--yellow)}textarea.field-input{resize:vertical;min-height:228px;line-height:1.7;tab-size:4}.field{margin-bottom:18px}.scan-controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px}.scan-controls select{background:#131313;border:1px solid var(--line);padding:11px;border-radius:8px;font:12px var(--sans);min-width:170px;flex:1}.toggle{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;margin-top:14px}.toggle input{accent-color:var(--yellow)}.toggle[hidden]{display:none}.run-btn{width:100%;margin-top:18px}.info{font-size:11px;color:var(--muted);margin:12px 0 0}.result-eyebrow{font:11px var(--mono);color:var(--muted);letter-spacing:.1em;text-transform:uppercase}.result{display:flex;flex:1;flex-direction:column;justify-content:center;align-items:center;text-align:center;min-height:295px}.result-ico{font:42px var(--mono);color:#6d6256;margin-bottom:16px}.result h3{font-size:21px;margin:0 0 9px}.result p{font-size:13px;color:var(--muted);max-width:310px;margin:0}.results{display:none;min-width:0}.results.active{display:block}.result-top{padding:20px;border:1px solid var(--line);border-radius:9px;margin:22px 0 16px}.result-top strong{font-size:32px;display:block;line-height:1.1}.result-top span{font-size:12px;color:var(--muted)}.finding{background:#25211f;border:1px solid var(--line);border-radius:9px;padding:14px;margin-bottom:9px;overflow-wrap:anywhere}.finding-head{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-bottom:8px}.sev{font:10px var(--mono);font-weight:700;letter-spacing:.02em;border-radius:4px;padding:3px 7px;background:#46302c;color:#ff9a8f}.sev.LOW,.sev.INFO{background:#243c34;color:var(--green)}.sev.MEDIUM{background:#44391f;color:#f4d375}.finding h4{font-size:13px;margin:0 0 6px}.finding p{color:var(--muted);font-size:12px;margin:0}.finding small{font:11px var(--mono);color:var(--muted)}.result-footer{font-size:11px;color:var(--muted);margin-top:16px}.error{color:var(--red)!important}
+.api-box{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel)}.api-groups{padding:4px 19px 15px}.api-group{padding:16px 0 7px}.api-group+.api-group{border-top:1px solid var(--line)}.api-group h3{font-size:14px;margin:0 0 11px;display:flex;align-items:center;gap:12px}.api-group h3 small{font-size:11px;color:var(--muted);font-weight:400}.api-entry{display:grid;grid-template-columns:66px minmax(0,1fr) minmax(90px,.85fr) auto;gap:14px;align-items:center;padding:11px 12px;border-radius:7px}.api-entry:hover{background:#2a2722}.verb{font:11px var(--mono);font-weight:800;color:var(--blue);background:#263344;text-align:center;border-radius:4px;padding:4px 5px}.verb.post{color:#e8c979;background:#423822}.path{font:12px/1.5 var(--mono);overflow-wrap:anywhere}.api-description{color:var(--muted);font-size:12px}.api-entry a{font-size:12px;color:var(--yellow);font-weight:750;white-space:nowrap}.api-entry a:hover{text-decoration:underline}.api-bottom{padding:15px 18px;border-top:1px solid var(--line);background:#24211e;display:flex;flex-wrap:wrap;gap:8px 20px;color:var(--muted);font-size:12px}.api-bottom a{color:var(--yellow)}
+.report-panel{display:grid;grid-template-columns:1fr auto;align-items:center;gap:16px;padding:23px 25px;border:1px solid var(--line);background:var(--panel);border-radius:12px}.report-panel h3{margin:0 0 6px;font-size:18px}.report-panel p{margin:0;color:var(--muted);font-size:13px}.report-action{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.report-action input{width:95px}.report-action select{width:100px}.report-action input,.report-action select{padding:10px;border-radius:8px;background:#141414;border:1px solid var(--line);font:12px var(--mono)}.report-message{font:12px var(--mono);color:var(--muted);margin:11px 0 0;min-height:18px}
+.foot{border-top:1px solid var(--line);padding:30px 0 42px;color:var(--muted);font-size:12px}.foot .container{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}.foot a{color:var(--text)}
+@media(max-width:940px){.hero{gap:20px}.hero h1{font-size:54px}.terminal{transform:none}.api-entry{grid-template-columns:60px minmax(0,1fr) auto}.api-description{display:none}.report-panel{grid-template-columns:1fr}}
+@media(max-width:720px){.container{padding:0 18px}.top-in{min-height:69px}.nav a:not(.nav-cta){display:none}.hero{grid-template-columns:1fr;padding:48px 0 42px}.hero h1{font-size:clamp(42px,11vw,58px)}.hero .lead{font-size:15px}.terminal{display:none}.status-row{grid-template-columns:1fr;gap:8px;margin-bottom:48px}.status-card{padding:12px 16px;display:flex;justify-content:space-between;align-items:center}.status-card .value{font-size:15px;margin:0}.section{margin-bottom:47px}.feature-grid{grid-template-columns:1fr}.feature{min-height:150px;padding:20px}.feature-icon{margin-bottom:9px}.scan-layout{grid-template-columns:1fr}.scan-left{border-right:0;border-bottom:1px solid var(--line);padding:20px}.scan-right{padding:20px}.result{min-height:175px}.api-entry{gap:10px;padding:10px 3px}.report-panel{padding:20px}.hero-note{flex-wrap:wrap}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top"><div class="container top-in">
+  <a class="brand" href="/" aria-label="Início SAST Platform"><div class="mark" aria-hidden="true">S/</div><span>SAST PLATFORM<small>DEVSECOPS · FIAP</small></span></a>
+  <nav class="nav" aria-label="Navegação"><a href="#recursos">Recursos</a><a href="#scanner">Scanner</a><a href="#endpoints">Endpoints</a><a class="nav-cta" href="/dashboard">Dashboard ↗</a></nav>
+</div></header>
+<main class="container">
+  <section class="hero" aria-labelledby="hero-title"><div>
+    <div class="eyebrow">Central de operações / segurança</div>
+    <h1 id="hero-title">Código seguro.<br><em>Pipeline confiável.</em></h1>
+    <p class="lead">Analise código Python, identifique vulnerabilidades e acompanhe os resultados do seu projeto. CP1, CP2 e CP3 conectadas em um só lugar.</p>
+    <div class="actions"><a href="#scanner" class="btn yellow">Iniciar análise <span aria-hidden="true">↗</span></a><a href="/dashboard" class="btn">Explorar dashboard <span aria-hidden="true">→</span></a></div>
+    <div class="hero-note"><span>Análise estática</span><span>IA local opcional</span><span>Security Gate</span></div>
+  </div><div class="terminal" aria-hidden="true">
+    <div class="termbar"><span class="dots"><i></i><i></i><i></i></span><span>security-check.py</span><span>● live preview</span></div>
+    <div class="termcode"><span class="comment"># varredura de segurança</span>
+<span class="purple">$</span> <span class="cyan">python -m app.gate</span>
+<span class="prompt">›</span> AST analysis <span class="comment">..............</span> ✓
+<span class="prompt">›</span> Taint analysis <span class="comment">............</span> ✓
+<span class="prompt">›</span> Security gate <span class="comment">.............</span> !</div>
+    <div class="term-summary"><b>● RISCO DETECTADO · EXEMPLO ILUSTRATIVO</b><p>Fluxo de dados potencialmente inseguro.<br>Revise os achados antes do deploy.</p></div>
+  </div></section>
+  <div class="status-row" aria-label="Situação dos serviços">
+    <div class="status-card"><div class="label">API FastAPI</div><div class="value"><span class="dot" id="api-dot"></span><span id="api-state">Verificando...</span></div></div>
+    <div class="status-card"><div class="label">Ollama · IA local</div><div class="value"><span class="dot" id="llm-dot"></span><span id="llm-state">Verificando...</span></div></div>
+    <div class="status-card"><div class="label">Análises recentes</div><div class="value"><span id="recent-scans">—</span></div></div>
+  </div>
+  <section class="section" id="recursos"><div class="section-heading"><div><div class="section-number">01 / VISÃO GERAL</div><h2>Tudo começa aqui.</h2><p class="section-desc">Três caminhos para explorar a plataforma.</p></div></div>
+    <div class="feature-grid"><a class="feature" href="/dashboard"><div class="feature-icon">▤</div><h3>Dashboard executivo</h3><p>Consulte análises armazenadas, severidades, histórico e detalhes dos achados.</p><span class="feature-link">Abrir painel ↗</span></a>
+    <a class="feature" href="#scanner"><div class="feature-icon">⌘</div><h3>Análise de código</h3><p>Teste as regras de detecção e o fluxo de dados com um trecho Python.</p><span class="feature-link">Analisar agora ↗</span></a>
+    <a class="feature" href="/docs"><div class="feature-icon">{ }</div><h3>Documentação interativa</h3><p>Explore e execute todas as rotas da API no Swagger, inclusive os endpoints POST.</p><span class="feature-link">Abrir Swagger ↗</span></a></div>
+  </section>
+  <section class="section" id="scanner"><div class="section-heading"><div><div class="section-number">02 / LABORATÓRIO</div><h2>Teste o scanner.</h2><p class="section-desc">Cole um trecho Python ou use o exemplo. O código é analisado como texto, sem execução.</p></div></div>
+    <div class="scan-layout"><div class="scan-left"><form id="scan-form">
+      <div class="field"><div class="field-head"><label class="field-title" for="filename">NOME DO ARQUIVO</label><span class="label-tag">PYTHON</span></div><input class="field-input" id="filename" value="exemplo.py" maxlength="255" required></div>
+      <div class="field"><div class="field-head"><label class="field-title" for="source-code">CÓDIGO-FONTE</label><button type="button" class="btn small" id="example-btn">Carregar exemplo ↺</button></div><textarea id="source-code" class="field-input" spellcheck="false" required maxlength="200000" aria-describedby="scan-note">entrada = input("Digite algo: ")
+resultado = eval(entrada)
+print(resultado)</textarea></div>
+      <div class="field-head"><label class="field-title" for="scan-type">TIPO DE ANÁLISE</label></div><div class="scan-controls"><select id="scan-type"><option value="semantic">CP2 · Semântica + Taint</option><option value="basic">CP1 · Regras AST</option></select></div>
+      <label class="toggle" id="llm-option"><input type="checkbox" id="use-llm"> Solicitar revisão ao Ollama (pode demorar)</label>
+      <button class="btn yellow run-btn" id="run-btn" type="submit">Executar análise <span aria-hidden="true">→</span></button>
+      <p class="info" id="scan-note">Nenhum código é executado. A IA só é chamada se você ativar a opção acima.</p>
+    </form></div><div class="scan-right"><div class="result-eyebrow">RESULTADO DA ANÁLISE</div>
+      <div class="result" id="result-empty"><div class="result-ico">⌁</div><h3>Pronto para analisar</h3><p>Execute uma varredura para ver as vulnerabilidades encontradas e suas severidades.</p></div>
+      <div class="results" id="scan-results" aria-live="polite"><div id="results-summary"></div><div id="results-list"></div><p class="result-footer" id="results-note"></p></div>
+    </div></div>
+  </section>
+  <section class="section" id="endpoints"><div class="section-heading"><div><div class="section-number">03 / API REFERENCE</div><h2>Mapa dos endpoints.</h2><p class="section-desc">Rotas obtidas automaticamente da especificação OpenAPI da aplicação. POST abre no Swagger para teste.</p></div><a href="/docs" class="btn small">Swagger completo ↗</a></div>
+    <div class="api-box"><div class="api-groups" id="endpoint-groups"><p class="muted">Carregando endpoints da API...</p></div><div class="api-bottom"><span><b>EXTRAS</b></span><a href="/docs">/docs</a><a href="/redoc">/redoc</a><a href="/openapi.json">/openapi.json</a></div></div>
+  </section>
+  <section class="section" id="relatorios"><div class="section-heading"><div><div class="section-number">04 / EVIDÊNCIAS</div><h2>Exportar relatórios.</h2><p class="section-desc">Baixe relatórios de varreduras de projeto já salvas no banco.</p></div></div>
+    <div class="report-panel"><div><h3>Escolha um scan e o formato</h3><p>Os relatórios ficam disponíveis após <code>POST /scan/project</code> com <code>save: true</code>, ou após ingestão do CI.</p></div><div class="report-action"><label class="field-title" for="report-id">SCAN #</label><input id="report-id" type="number" min="1" step="1" placeholder="ID"><label class="field-title" for="report-format">FORMATO</label><select id="report-format"><option value="html">HTML</option><option value="json">JSON</option><option value="csv">CSV</option><option value="md">Markdown</option><option value="sarif">SARIF</option></select><button class="btn yellow small" id="report-open" type="button">Abrir ↗</button></div></div><div class="report-message" id="report-message" role="status"></div>
+  </section>
+</main>
+<footer class="foot"><div class="container"><span>SAST Platform · Projeto acadêmico FIAP · CP1 + CP2 + CP3</span><span>Protótipo de segurança, não substitui auditoria profissional. <a href="/dashboard">Dashboard</a> · <a href="/docs">API</a></span></div></footer>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const example = 'entrada = input("Digite algo: ")\nresultado = eval(entrada)\nprint(resultado)';
+const setStatus = (dot, state, kind, message) => { $(dot).className = 'dot ' + kind; $(state).textContent = message; };
+const requestJSON = async (url, opts) => {
+  const response = await fetch(url, {headers:{Accept:'application/json', ...(opts && opts.headers || {})}, ...opts});
+  const data = await response.json();
+  if (!response.ok) { const detail = data.detail; const message = typeof detail === 'string' ? detail : (detail && detail.message) || `Falha HTTP ${response.status}`; throw Error(message); }
+  return data;
+};
+async function loadOverview(){
+  const calls = [
+    requestJSON('/health').then(data => setStatus('api-dot','api-state',data.status === 'ok'?'ok':'warn',data.status === 'ok'?'Operacional':'Verificar serviço')).catch(() => setStatus('api-dot','api-state','bad','Indisponível')),
+    requestJSON('/llm/health').then(data => {const ready=data.status==='ready';setStatus('llm-dot','llm-state',ready?'ok':'warn',ready?'Modelo disponível':data.status==='model_missing'?'Modelo não instalado':'Indisponível (opcional)');}).catch(()=>setStatus('llm-dot','llm-state','warn','Não verificado')),
+    requestJSON('/api/scans?limit=200').then(data => { $('recent-scans').textContent = `${data.length} registro${data.length===1?'':'s'}`;const last=data[data.length-1];if(last && Number.isSafeInteger(last.id)){$('report-id').value=last.id;$('report-message').textContent=`Última análise salva: #${last.id}.`;}}).catch(()=>{$('recent-scans').textContent='Não disponível';})
+  ];
+  await Promise.allSettled(calls);
+}
+function addText(tag, text, className){const node=document.createElement(tag);node.textContent=text;if(className)node.className=className;return node;}
+function endpointGroup(path){if(path==='/scan')return 'CP1 · Análise inicial';if(path.startsWith('/scan/semantic')||path.startsWith('/llm/'))return 'CP2 · IA local';if(path.startsWith('/reports/'))return 'Relatórios';if(path.startsWith('/scan/project')||path.startsWith('/api/')||path==='/dashboard')return 'CP3 · DevSecOps';if(path==='/health')return 'Sistema';return 'Outros endpoints';}
+function endpointLink(path,method,details){
+  if(method==='GET' && !path.includes('{'))return {url:path,label:'Abrir ↗'};
+  if(path.startsWith('/reports/'))return {url:'#relatorios',label:'Escolher ID ↗'};
+  const tag=(details.tags&&details.tags[0])||'default';
+  const operation=details.operationId;
+  return {url:operation?'/docs#/'+encodeURIComponent(tag)+'/'+encodeURIComponent(operation):'/docs',label:'Testar ↗'};
+}
+async function loadEndpoints(){
+  const root=$('endpoint-groups');
+  try{
+    const spec=await requestJSON('/openapi.json');
+    const groups=new Map();
+    const order=['Sistema','CP1 · Análise inicial','CP2 · IA local','CP3 · DevSecOps','Relatórios','Outros endpoints'];
+    Object.entries(spec.paths||{}).forEach(([path,methods])=>{
+      Object.entries(methods).forEach(([method,detail])=>{
+        if(!['get','post','put','delete','patch'].includes(method))return;
+        const label=endpointGroup(path);if(!groups.has(label))groups.set(label,[]);
+        groups.get(label).push({method:method.toUpperCase(),path,detail});
+      });
+    });
+    root.replaceChildren();
+    order.forEach(name=>{
+      if(!groups.has(name))return;
+      const items=groups.get(name);const group=addText('div','','api-group');
+      const title=addText('h3',name);title.appendChild(addText('small',`${items.length} rota${items.length===1?'':'s'}`));group.appendChild(title);
+      items.forEach(({method,path,detail})=>{
+        const item=addText('div','','api-entry');
+        item.appendChild(addText('span',method,'verb '+(method==='POST'?'post':'')));
+        item.appendChild(addText('code',path,'path'));
+        item.appendChild(addText('span',detail.summary||detail.description||'', 'api-description'));
+        const go=addText('a','','api-go');const link=endpointLink(path,method,detail);go.href=link.url;go.textContent=link.label;
+        item.appendChild(go);group.appendChild(item);
+      });
+      root.appendChild(group);
+    });
+    if(!groups.size)root.appendChild(addText('p','Não foi possível descobrir rotas documentadas. Acesse /docs.','muted'));
+  }catch(e){root.replaceChildren(addText('p','Não foi possível carregar a lista automática. Acesse /docs para consultar os endpoints.','muted'));}
+}
+$('example-btn').addEventListener('click',()=>{$('source-code').value=example;$('source-code').focus();});
+$('scan-type').addEventListener('change',()=>{$('llm-option').hidden=$('scan-type').value!=='semantic';});
+function showMessage(message,isError){$('result-empty').hidden=true;$('scan-results').classList.add('active');$('results-summary').replaceChildren();$('results-list').replaceChildren();$('results-summary').appendChild(addText('p',message,isError?'error':'muted'));$('results-note').textContent='';}
+$('scan-form').addEventListener('submit',async evt=>{
+  evt.preventDefault();
+  const filename=$('filename').value.trim(),source_code=$('source-code').value;
+  if(!filename||!source_code.trim()){showMessage('Preencha o arquivo e o código Python.',true);return;}
+  const semantic=$('scan-type').value==='semantic';
+  const body={filename,source_code};if(semantic)body.use_llm=$('use-llm').checked;
+  const btn=$('run-btn');btn.disabled=true;btn.textContent='Analisando...';showMessage('A análise está em andamento. Aguarde a resposta da API.',false);
+  try{
+    const data=await requestJSON(semantic?'/scan/semantic':'/scan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const total=data.summary?.total_findings??(data.findings||[]).length;
+    const summary=$('results-summary'),list=$('results-list');summary.replaceChildren();list.replaceChildren();
+    const box=addText('div','','result-top');box.appendChild(addText('strong',String(total)));box.appendChild(addText('span',total===1?'Achado de segurança identificado':'Achados de segurança identificados'));summary.appendChild(box);
+    if(!total)list.appendChild(addText('p','Nenhum problema encontrado pelas regras implementadas. Isso não garante ausência de vulnerabilidades.','muted'));
+    (data.findings||[]).forEach(f=>{
+      const row=addText('article','','finding');const head=addText('div','','finding-head');head.appendChild(addText('span',f.severity||'INFO','sev '+(f.severity||'INFO')));head.appendChild(addText('small',`${f.rule_id||'Regra'} · linha ${f.line??'—'}`));row.appendChild(head);
+      row.appendChild(addText('h4',f.title||'Achado de segurança'));
+      row.appendChild(addText('p',f.message||'Consulte a resposta detalhada no Swagger.'));
+      if(f.remediation&&f.remediation.explanation)row.appendChild(addText('p','Sugestão: '+f.remediation.explanation));
+      list.appendChild(row);
+    });
+    $('results-note').textContent=semantic?`IA local: ${(data.llm&&data.llm.status)||'não solicitada'}. Os resultados são estimativas; o código não foi executado.`:'Análise CP1 concluída. O código não foi executado.';
+  }catch(e){showMessage('Falha na análise: '+e.message,true);}finally{btn.disabled=false;btn.textContent='Executar análise →';}
+});
+$('report-open').addEventListener('click',()=>{
+ const raw=$('report-id').value.trim(),id=Number(raw),fmt=$('report-format').value;
+ if(!/^\d+$/.test(raw)||!Number.isSafeInteger(id)||id<1){$('report-message').textContent='Informe o número de uma análise salva (ID positivo).';return;}
+ if(!['html','json','csv','md','sarif'].includes(fmt))return;
+ window.location.assign(`/reports/${id}.${fmt}`);
+});
+loadOverview();loadEndpoints();
+</script>
+</body>
+</html>

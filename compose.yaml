@@ -1,0 +1,30 @@
+services:
+  sast-api:
+    build: .
+    environment:
+      PYTHONPATH: /app
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2:3b}
+      OLLAMA_TIMEOUT: ${OLLAMA_TIMEOUT:-180}
+      SAST_DB_PATH: /var/lib/sast/sast.db
+      SAST_INGEST_TOKEN: ${SAST_INGEST_TOKEN:-}
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - .:/app
+      - sast-data:/var/lib/sast
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    init: true
+    restart: unless-stopped
+    depends_on:
+      - ollama
+
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama-data:/root/.ollama
+    restart: unless-stopped
+
+volumes:
+  ollama-data:
+  sast-data:
