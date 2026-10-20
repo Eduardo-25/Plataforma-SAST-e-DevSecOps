@@ -48,3 +48,68 @@ flowchart TB
 - **Testes:** verificam detecções positivas, caso sem os padrões, código com sintaxe inválida e endpoints da API.
 
 PostgreSQL, Redis/Celery, Ollama, dashboard e pipeline CI/CD são componentes planejados; o diagrama não afirma que já estejam funcionais no CP1.
+
+---
+
+## CP3 — DevSecOps e entrega
+
+A CP3 implementa a integração com GitHub Actions e o dashboard. Persistência é **SQLite** (não PostgreSQL) e a varredura é síncrona (sem Redis/Celery); veja `CP3.md` para a justificativa.
+
+### C4 — Nível 1: Contexto
+
+```mermaid
+flowchart LR
+    DEV["Pessoa: Desenvolvedor / equipe"]
+    GER["Pessoa: Gestão / avaliador"]
+    GH["Sistema externo: GitHub\n(Pull Requests, Actions, Code Scanning)"]
+    SAST["Sistema: Plataforma SAST"]
+    DEV -->|"abre PR"| GH
+    GH -->|"executa o Security Gate"| SAST
+    SAST -->|"veredito, anotações, SARIF"| GH
+    GH -->|"bloqueia ou libera o merge"| DEV
+    DEV -->|"envia arquivos .py"| SAST
+    GER -->|"consulta o dashboard"| SAST
+```
+
+### C4 — Nível 2: Containers e módulos
+
+```mermaid
+flowchart TB
+    subgraph CI["GitHub Actions"]
+      WF["Workflow security-gate.yml\nTestes · Security gate · Build"]
+      GATE["CLI: python -m app.gate\ncódigo de saída 0 / 1 / 2"]
+      WF --> GATE
+    end
+    subgraph PLATFORM["Plataforma SAST (Docker Compose)"]
+      API["API FastAPI\n/scan/project · /api/scans/ingest\n/api/dashboard · /reports"]
+      DASHUI["Dashboard HTML\n/dashboard"]
+      SCAN["project_scan.py\npolítica, severidade efetiva, supressões"]
+      ENGINES["Motores: scanner.py (CP1)\ntaint.py (CP2)"]
+      REP["reports.py\nJSON · CSV · MD · SARIF · HTML"]
+      DB[("SQLite\nvolume sast-data")]
+      OLLAMA["Ollama (CP2)\nrevisão semântica opcional"]
+      API --> SCAN --> ENGINES
+      API --> REP
+      API --> DB
+      DASHUI --> API
+      API -.-> OLLAMA
+    end
+    GATE --> SCAN
+    GATE -->|"SARIF, comentário, artefatos"| GHUI["Pull Request / Code Scanning"]
+    GATE -.->|"opcional: ingest"| API
+```
+
+### Fluxo do Security Gate
+
+```mermaid
+flowchart LR
+    A["PR aberto/atualizado"] --> B["git diff: .py alterados"]
+    B --> C["Motores AST + taint"]
+    C --> D["Severidade efetiva\n- supressões sast-ignore"]
+    D --> E{"Achado ativo >= fail_on?"}
+    E -- sim --> F["exit 1: check vermelho\nmerge bloqueado"]
+    E -- não --> G["exit 0: check verde"]
+    F --> H["Anotações, comentário, SARIF, artefatos"]
+    G --> H
+```
+

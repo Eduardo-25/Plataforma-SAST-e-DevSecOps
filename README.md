@@ -1,3 +1,26 @@
+# CP3 — DevSecOps e entrega
+
+Security Gate no GitHub Actions que bloqueia Pull Requests inseguros e dashboard executivo por arquivo, linha e severidade. Detalhes em [docs/CP3.md](docs/CP3.md); roteiro de apresentação em [docs/DEFESA_CP3.md](docs/DEFESA_CP3.md).
+
+```bash
+docker compose up --build -d
+# Dashboard:  http://localhost:8000/dashboard      API: http://localhost:8000/docs
+docker compose exec sast-api python -m pytest -q -p no:cacheprovider
+docker compose exec sast-api python -m app.gate --path samples      # demonstra um bloqueio (código de saída 1)
+```
+
+| Recurso | Onde |
+|---|---|
+| Gate (CLI, códigos de saída 0/1/2) | `python -m app.gate`; política em `sast-gate.toml` |
+| Pipeline | `.github/workflows/security-gate.yml` (testes, gate, build); ative os checks obrigatórios na `main` |
+| Dashboard | `GET /dashboard` |
+| Varredura de projeto / ingestão do CI | `POST /scan/project`, `POST /api/scans/ingest` |
+| Relatórios | `GET /reports/{id}.{json,csv,md,sarif,html}` e artefato `sast-reports` do workflow |
+
+O gate usa só os motores determinísticos (regras AST + taint); a IA continua em `/scan/semantic`. Não foram verificados neste pacote a execução real do workflow no GitHub nem o build do Docker: veja a seção final de `docs/DEFESA_CP3.md`.
+
+---
+
 # CP2 — IA e análise semântica
 
 **Comece por [COMECE_AQUI_CP2.md](COMECE_AQUI_CP2.md):** instalação, cliques no Swagger, demonstração e envio ao GitHub.

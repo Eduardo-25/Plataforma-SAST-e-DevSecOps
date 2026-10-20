@@ -5,16 +5,19 @@ from collections import Counter
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
+from app.dashboard import router as dashboard_router
 from app.scanner import scan_source
 
 app = FastAPI(
-    title="Plataforma SAST - CP1 + CP2",
+    title="Plataforma SAST - CP1 + CP2 + CP3",
     description=(
         "Protótipo de análise estática Python. O código enviado é convertido em AST "
         "e inspecionado sem ser executado."
     ),
-    version="0.2.0",
+    version="0.3.0",
 )
+
+app.include_router(dashboard_router)
 
 
 class ScanRequest(BaseModel):

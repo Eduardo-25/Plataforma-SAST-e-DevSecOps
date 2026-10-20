@@ -5,3 +5,7 @@ __pycache__
 *.py[cod]
 .pytest_cache
 .env
+reports
+data
+*.db
+.github

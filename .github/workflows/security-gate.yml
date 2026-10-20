@@ -1,0 +1,114 @@
+name: Security Gate
+
+# Bloqueia Pull Requests inseguros. Para o bloqueio de merge valer, marque os jobs
+# "Testes" e "Security gate" como checks obrigatórios na proteção da branch main
+# (veja docs/CP3.md, seção "Ativar o bloqueio de merge").
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: security-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: Testes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: python -m pytest -q -p no:cacheprovider
+
+  security-gate:
+    name: Security gate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write   # enviar SARIF ao Code Scanning
+      pull-requests: write     # comentar o resultado no PR
+    # Em PRs de forks o token é somente leitura: SARIF e comentário são pulados, o gate roda igual.
+    env:
+      CAN_WRITE: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0   # necessário para comparar o PR com a branch base
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Executar o gate
+        id: gate
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          # Opcionais: se definidos como secrets, o resultado também alimenta o dashboard hospedado.
+          SAST_API_URL: ${{ secrets.SAST_API_URL }}
+          SAST_API_TOKEN: ${{ secrets.SAST_API_TOKEN }}
+        run: |
+          args=()
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            args+=(--changed-from "origin/${BASE_REF}")   # só arquivos alterados no PR
+          fi
+          python -m app.gate "${args[@]}" \
+            --json-out reports/gate.json \
+            --sarif-out reports/gate.sarif \
+            --markdown-out reports/gate.md \
+            --csv-out reports/gate.csv \
+            --html-out reports/dashboard.html
+
+      - name: Publicar relatórios (JSON, SARIF, CSV, dashboard HTML)
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: sast-reports
+          path: reports/
+          if-no-files-found: ignore
+
+      - name: Enviar SARIF ao Code Scanning
+        if: always() && env.CAN_WRITE == 'true' && hashFiles('reports/gate.sarif') != ''
+        continue-on-error: true   # indisponível em repositórios privados sem GitHub Advanced Security
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: reports/gate.sarif
+          category: plataforma-sast
+
+      - name: Comentar resultado no Pull Request
+        if: always() && github.event_name == 'pull_request' && env.CAN_WRITE == 'true' && hashFiles('reports/gate.md') != ''
+        continue-on-error: true
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- sast-gate -->';
+            const body = marker + '\n' + fs.readFileSync('reports/gate.md', 'utf8');
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number });
+            const previous = comments.find(c => c.body && c.body.startsWith(marker));
+            if (previous) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: previous.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+
+  docker-build:
+    name: Build da imagem
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - run: docker build -t plataforma-sast:ci .

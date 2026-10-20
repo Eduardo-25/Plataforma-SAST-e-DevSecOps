@@ -1,0 +1,12 @@
+# Política do Security Gate (lida por `python -m app.gate`).
+[policy]
+# Severidade efetiva mínima que bloqueia o Pull Request: INFO, LOW, MEDIUM, HIGH, CRITICAL ou NONE.
+fail_on = "HIGH"
+# Se verdadeiro, um arquivo .py com erro de sintaxe também bloqueia.
+fail_on_parse_error = false
+# Descomente para limitar o total de achados ativos (qualquer severidade):
+# max_active_findings = 10
+
+[scan]
+# Arquivos ignorados (globs relativos à raiz). samples/ contém código vulnerável de propósito.
+exclude = [".git/**", ".venv/**", "venv/**", "node_modules/**", "__pycache__/**", "reports/**", "samples/**"]
