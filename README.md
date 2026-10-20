@@ -4,8 +4,6 @@ Projeto da disciplina de **Cybersecurity da FIAP**, desenvolvido ao longo das CP
 
 A ideia é analisar código Python **sem executar o arquivo**, identificar possíveis falhas de segurança e mostrar os resultados de um jeito mais fácil de acompanhar. Além da análise pela API, o projeto conta com uma página inicial, um dashboard e um Security Gate para verificar alterações no GitHub.
 
-![Prévia da página inicial da plataforma](docs/home-preview.png)
-
 ## Como rodar o projeto
 
 Você só precisa ter o **Docker Desktop** instalado e aberto.
@@ -194,4 +192,3 @@ A aplicação também foi preparada para **uso local**, sem sistema de login. N�
 | SAST001 | Literal de texto em variável/chave associada a senha, token ou segredo | CWE-798 | HIGH |
 | SAST002 | Chamada a `eval()` ou `exec()` | CWE-95 | HIGH |
 | SAST003 | Chamada de execução de processo com `shell=True` | CWE-78 | HIGH |
-
