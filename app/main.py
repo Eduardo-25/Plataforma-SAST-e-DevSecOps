@@ -3,6 +3,9 @@
 from collections import Counter
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import HTMLResponse
+
+from app import reports
 from pydantic import BaseModel, Field
 
 from app.dashboard import router as dashboard_router
@@ -18,6 +21,13 @@ app = FastAPI(
 )
 
 app.include_router(dashboard_router)
+
+
+@app.get("/", response_class=HTMLResponse, include_in_schema=False)
+def home_page() -> HTMLResponse:
+    """Central de acesso ao dashboard, scanner e endpoints documentados."""
+    page = (reports.STATIC_DIR / "index.html").read_text(encoding="utf-8")
+    return HTMLResponse(page, headers={"Cache-Control": "no-store", "X-Content-Type-Options": "nosniff"})
 
 
 class ScanRequest(BaseModel):
