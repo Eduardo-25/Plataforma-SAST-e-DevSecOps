@@ -1,6 +1,4 @@
-# CP2 pronta para executar: guia do Matheus
-
-Este pacote contém a CP1 do grupo + os acréscimos da CP2. O notebook da Ford foi usado como referência de explicação direta e sequencial; esta atividade pede módulos na plataforma, não treinamento de autoencoder ou entrega isolada no Colab.
+# Guia para CP2
 
 ## 1. Abrir o projeto
 
