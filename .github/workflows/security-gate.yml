@@ -90,7 +90,7 @@ jobs:
       - name: Comentar resultado no Pull Request
         if: always() && github.event_name == 'pull_request' && env.CAN_WRITE == 'true' && hashFiles('reports/gate.md') != ''
         continue-on-error: true
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const fs = require('fs');
